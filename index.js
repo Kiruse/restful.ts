@@ -43,7 +43,9 @@ exports.restful = restful;
 restful.default = (options) => restful(createDefaultRequester(options));
 function createDefaultRequester({ baseUrl, headers: baseHeaders = {}, marshal = (value) => value, unmarshal = (value) => value, }) {
     return async function ({ method, endpoint, body, query = {}, headers = {}, }) {
-        const params = new URLSearchParams(Object.entries(query).map(([key, value]) => [key, value.toString()]));
+        const params = new URLSearchParams(Object.entries(query)
+            .filter(([_, value]) => value !== null && value !== undefined)
+            .map(([key, value]) => [key, value.toString()]));
         const url = `${baseUrl.replace(/\/$/, '')}/${endpoint.replace(/^\//, '')}${params.size ? `?${params}` : ''}`;
         const response = await fetch(url, {
             method,

@@ -2,15 +2,17 @@ type Method = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 
 type Requester = (options: RequestOptions) => Promise<unknown>;
 
-export interface RequestOptions {
+export type Query = Record<string, string | number | undefined | null>;
+
+export interface RequestOptions<Q = Query> {
   method: Method;
   endpoint: string;
   body?: unknown;
-  query?: Record<string, string | number | undefined | null>;
+  query?: Q;
   headers?: Record<string, string>;
 }
 
-export type RemainingRequestOptions = Omit<RequestOptions, 'method' | 'endpoint' | 'body'>;
+export type RemainingRequestOptions<Q = Query> = Omit<RequestOptions<Q>, 'method' | 'endpoint' | 'body'>;
 
 export type RestResource<T> = {
   [id: string | number]: T;

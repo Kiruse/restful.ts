@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "lib": ["ESNext"],
+    "allowJs": false,
+    "module": "CommonJS",
+    "target": "ES2020",
+    "types": ["bun-types"],
+    "esModuleInterop": true,
+    "declaration": true,
+    "sourceMap": true,
+  },
+  "include": ["./**/*.ts"],
+}

@@ -6,7 +6,7 @@ export interface RequestOptions {
   method: Method;
   endpoint: string;
   body?: unknown;
-  query?: Record<string, string | number>;
+  query?: Record<string, string | number | undefined | null>;
   headers?: Record<string, string>;
 }
 
@@ -99,7 +99,9 @@ export function createDefaultRequester({
     headers = {},
   }: RequestOptions): Promise<any> {
     const params = new URLSearchParams(
-      Object.entries(query).map(([key, value]) => [key, value.toString()])
+      Object.entries(query)
+        .filter(([_, value]) => value !== null && value !== undefined)
+        .map(([key, value]) => [key, value.toString()])
     );
     const url = `${baseUrl.replace(/\/$/, '')}/${endpoint.replace(/^\//, '')}${params.size ? `?${params}` : ''}`;
     const response = await fetch(url, {

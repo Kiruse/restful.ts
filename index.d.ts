@@ -14,7 +14,7 @@ export type RestResource<T> = {
 export interface RestApiTemplate {
     [key: string | number]: RestApiTemplate | RestApiMethodTemplate;
 }
-export type RestApiMethodTemplate = ((method: 'GET' | 'DELETE', options?: RemainingRequestOptions) => Promise<any>) | ((method: 'POST' | 'PUT' | 'PATCH', body: any, options?: RemainingRequestOptions) => Promise<any>);
+export type RestApiMethodTemplate = ((method: 'GET', options?: RemainingRequestOptions) => Promise<any>) | ((method: 'DELETE', options?: RemainingRequestOptions) => Promise<any>) | ((method: 'POST', body: any, options?: RemainingRequestOptions) => Promise<any>) | ((method: 'PUT', body: any, options?: RemainingRequestOptions) => Promise<any>) | ((method: 'PATCH', body: any, options?: RemainingRequestOptions) => Promise<any>);
 /** `restful` creates a simple interface to your RESTful web API. */
 declare function restful<T extends RestApiTemplate>(request: Requester): T;
 declare namespace restful {

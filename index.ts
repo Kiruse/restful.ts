@@ -21,8 +21,11 @@ export interface RestApiTemplate {
 }
 
 export type RestApiMethodTemplate =
-  | ((method: 'GET' | 'DELETE', options?: RemainingRequestOptions) => Promise<any>)
-  | ((method: 'POST' | 'PUT' | 'PATCH', body: any, options?: RemainingRequestOptions) => Promise<any>);
+  | ((method: 'GET', options?: RemainingRequestOptions) => Promise<any>)
+  | ((method: 'DELETE', options?: RemainingRequestOptions) => Promise<any>)
+  | ((method: 'POST', body: any, options?: RemainingRequestOptions) => Promise<any>)
+  | ((method: 'PUT', body: any, options?: RemainingRequestOptions) => Promise<any>)
+  | ((method: 'PATCH', body: any, options?: RemainingRequestOptions) => Promise<any>);
 
 /** `restful` creates a simple interface to your RESTful web API. */
 export default function restful<T extends RestApiTemplate>(request: Requester): T {

@@ -1,6 +1,6 @@
 {
   "name": "@kiruse/restful",
-  "version": "0.1.3",
+  "version": "0.1.3-hotfix.1",
   "description": "Simple REST-ful abstraction with a sprinkle of TypeScript magic",
   "main": "index.js",
   "scripts": {

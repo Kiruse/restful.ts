@@ -122,7 +122,9 @@ export default function restful<T extends RestApiTemplate>(request: Requester): 
     });
   };
 
-  return createEndpoint([]);
+  const root = createEndpoint([]);
+  root[MetadataSymbol] = { request };
+  return root;
 }
 export { restful };
 
@@ -135,6 +137,16 @@ export { restful };
  * - Returns JSON-parsed response bodies, not the intermittent `Response` object, but the `Response` object is available on the `RestError`
  */
 restful.default = <T extends RestApiTemplate>(options: DefaultRequesterOptions) => restful<T>(createDefaultRequester(options));
+
+/** Create a new Restful API with a different definition but reusing the given `api`'s requester.
+ * Useful for when it's possible to reuse an existing API implementation but with different endpoints.
+ * However, all morphers of the old API are lost.
+ *
+ * This can be used, for example, in the Cosmos blockchain ecosystem where the REST API is generally
+ * the same except for minor variations in body or result shapes and the inclusion or omission of
+ * some endpoints.
+ */
+restful.retarget = <T extends RestApiTemplate>(api: RestApi<any>) => restful<T>(api[MetadataSymbol].request);
 
 restful.BodyMorphSymbol = BodyMorphSymbol;
 restful.QueryMorphSymbol = QueryMorphSymbol;

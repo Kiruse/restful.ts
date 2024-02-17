@@ -2,7 +2,7 @@ import { afterAll, expect, test } from 'bun:test';
 import restful, { RestResource } from './index';
 import { Foo, mockServer } from './mock';
 
-export type MockApi = {
+type MockApi = {
   'hello-world'(method: 'GET'): Promise<string>;
   echo<T>(method: 'POST', body: T): Promise<T>;
 
@@ -34,6 +34,11 @@ test('nesting', async () => {
   expect(await mockApi.foo[1]('GET')).toEqual({ id: 1, name: 'Foo 1' });
   expect(await mockApi.foo[1]('PUT', { name: 'Bar' })).toEqual({ id: 1, name: 'Bar' });
   expect(await mockApi.foo[1].name('PUT', { value: 'Bar' })).toEqual({ id: 1, name: 'Bar' });
+});
+
+test('instance stability', () => {
+  expect(mockApi.foo).toBe(mockApi.foo);
+  expect(mockApi.foo[1]).toBe(mockApi.foo[1]);
 });
 
 afterAll(() => {

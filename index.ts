@@ -1,3 +1,5 @@
+const MetadataSymbol = Symbol('Restful');
+
 type Method = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 
 type Requester = (options: RequestOptions) => Promise<unknown>;
@@ -23,11 +25,23 @@ export interface RestApiTemplate {
 }
 
 export type RestApiMethodTemplate =
-  | ((method: 'GET', options?: RemainingRequestOptions) => Promise<any>)
-  | ((method: 'DELETE', options?: RemainingRequestOptions) => Promise<any>)
-  | ((method: 'POST', body: any, options?: RemainingRequestOptions) => Promise<any>)
-  | ((method: 'PUT', body: any, options?: RemainingRequestOptions) => Promise<any>)
-  | ((method: 'PATCH', body: any, options?: RemainingRequestOptions) => Promise<any>);
+  | RestApiMethod<'GET', undefined, Query, any>
+  | RestApiMethod<'DELETE', undefined, Query, any>
+  | RestApiMethod<'POST', any, Query, any>
+  | RestApiMethod<'PUT', any, Query, any>
+  | RestApiMethod<'PATCH', any, Query, any>;
+export type RestApiMethod<M extends Method, B, Q extends Query, R> =
+  M extends 'GET' | 'DELETE' ? (method: M, options?: RemainingRequestOptions<Q>) => Promise<R> :
+  (method: M, body: B, options?: RemainingRequestOptions<Q>) => Promise<R>;
+
+/** Extracts the applicable method of this endpoint from a valid method signature. */
+export type RestApiMethodMethod<Fn extends RestApiMethodTemplate> = Fn extends RestApiMethod<infer M, any, any, any> ? M : never;
+/** Extracts the request body type of this endpoint from a valid method signature. */
+export type RestApiMethodBody  <Fn extends RestApiMethodTemplate> = Fn extends RestApiMethod<'POST' | 'PUT' | 'PATCH', infer B, any, any> ? B : never;
+/** Extracts the query of this endpoint from a valid method signature. */
+export type RestApiMethodQuery <Fn extends RestApiMethodTemplate> = Fn extends RestApiMethod<any, any, infer Q, any> ? Q : never;
+/** Extracts the response result type of this endpoint from a valid method signature. */
+export type RestApiMethodResult<Fn extends RestApiMethodTemplate> = Fn extends RestApiMethod<any, any, any, infer R> ? R : never;
 
 /** `restful` creates a simple interface to your RESTful web API. */
 export default function restful<T extends RestApiTemplate>(request: Requester): T {
@@ -51,15 +65,17 @@ export default function restful<T extends RestApiTemplate>(request: Requester): 
       }
     },
     {
-      get(_, prop: string) {
-        return createEndpoint(`${endpoint}/${prop}`);
+      get(target: any, prop) {
+        const meta = target[MetadataSymbol] ??= {};
+        if (prop in meta) return meta[prop];
+        if (typeof prop === 'symbol')
+          throw Error('Invalid path part type Symbol');
+        return meta[prop] = createEndpoint(`${endpoint}/${prop}`);
       },
     }
   );
 
-  return new Proxy({}, {
-    get: (_, prop: string) => createEndpoint(prop),
-  }) as any;
+  return createEndpoint('') as any;
 }
 export { restful };
 

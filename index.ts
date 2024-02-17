@@ -1,5 +1,11 @@
 const MetadataSymbol = Symbol('Restful');
+export const BodyMorphSymbol = Symbol('Restful.BodyMorph');
+export const QueryMorphSymbol = Symbol('Restful.QueryMorph');
+export const HeaderMorphSymbol = Symbol('Restful.HeaderMorph');
+export const ResultMorphSymbol = Symbol('Restful.ResultMorph');
 
+type Endpoint = EndpointPathPart[];
+type EndpointPathPart = string | RestResourcePathPart;
 type Method = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 
 type Requester = (options: RequestOptions) => Promise<unknown>;
@@ -8,7 +14,7 @@ export type Query = Record<string, string | number | undefined | null>;
 
 export interface RequestOptions<Q extends Query = Query> {
   method: Method;
-  endpoint: string;
+  endpoint: Endpoint;
   body?: unknown;
   query?: Q;
   headers?: Record<string, string>;
@@ -19,6 +25,37 @@ export type RemainingRequestOptions<Q extends Query = Query> = Omit<RequestOptio
 export type RestResource<T> = {
   [id: string | number]: T;
 };
+
+export type RestApi<T extends RestApiTemplate | RestApiMethodTemplate> =
+  & (
+      T extends Record<any, any>
+      ? {
+          [K in keyof T]: RestApi<T[K]>;
+        }
+      : {}
+    )
+  & (
+      T extends RestApiMethodTemplate
+      ? T & {
+          /** An optional morpher which takes the request body and changes it, e.g. changing its shape
+           * when the desired library-exposed shape is different from the actual API shape.
+           */
+          [BodyMorphSymbol]?(endpoint: Endpoint, body: RestApiMethodBody<T>): any;
+          /** An optional morpher which takes the request query and changes it, e.g. adds more
+           * parameters depending on the endpoint.
+           */
+          [QueryMorphSymbol]?(endpoint: Endpoint, query: RestApiMethodQuery<T>): Query;
+          /** An optional morpher which takes the request headers and changes them, e.g. adds more
+           * headers depending on the endpoint.
+           */
+          [HeaderMorphSymbol]?(endpoint: Endpoint, headers: Record<string, string>): Record<string, string>;
+          /** An optional morpher which takes the raw, unknown result from the response and produces
+           * the desired result. Should throw `RestError` if it fails to parse the result.
+           */
+          [ResultMorphSymbol]?(endpoint: Endpoint, result: unknown): RestApiMethodResult<T>;
+        }
+      : {}
+    )
 
 export interface RestApiTemplate {
   [key: string | number]: RestApiTemplate | RestApiMethodTemplate;
@@ -44,38 +81,48 @@ export type RestApiMethodQuery <Fn extends RestApiMethodTemplate> = Fn extends R
 export type RestApiMethodResult<Fn extends RestApiMethodTemplate> = Fn extends RestApiMethod<any, any, any, infer R> ? R : never;
 
 /** `restful` creates a simple interface to your RESTful web API. */
-export default function restful<T extends RestApiTemplate>(request: Requester): T {
-  const createEndpoint = (endpoint: string): any => new Proxy(
-    async (method: Method, ...args: any[]) => {
+export default function restful<T extends RestApiTemplate>(request: Requester): RestApi<T> {
+  function createEndpoint(endpoint: Endpoint): any {
+    const target = async (method: Method, ...args: any[]) => {
+      let body: any, query: any, headers: any, opts: any;
       if (method === 'GET' || method === 'DELETE') {
-        const [opts] = args;
-        return await request({
-          method,
-          endpoint,
-          ...opts,
-        });
+        [opts] = args;
       } else {
-        const [body, opts] = args;
-        return await request({
-          method,
-          endpoint,
-          body,
-          ...opts,
-        });
+        [body, opts] = args;
       }
-    },
-    {
+
+      if (opts) {
+        if (opts.query)
+          query = target[QueryMorphSymbol] ? target[QueryMorphSymbol](endpoint, opts.query) : opts.query;
+        if (opts.headers)
+          headers = target[HeaderMorphSymbol] ? target[HeaderMorphSymbol](endpoint, opts.headers) : opts.headers;
+      }
+
+      const result = await request({
+        method,
+        endpoint,
+        body: target[BodyMorphSymbol] ? target[BodyMorphSymbol](endpoint, body) : body,
+        ...opts,
+        headers,
+        query,
+      });
+      if (target[ResultMorphSymbol])
+        return target[ResultMorphSymbol](endpoint, result);
+      return result;
+    };
+
+    return new Proxy(target, {
       get(target: any, prop) {
         const meta = target[MetadataSymbol] ??= {};
         if (prop in meta) return meta[prop];
         if (typeof prop === 'symbol')
           throw Error('Invalid path part type Symbol');
-        return meta[prop] = createEndpoint(`${endpoint}/${prop}`);
+        return meta[prop] = createEndpoint([...endpoint, prop]);
       },
-    }
-  );
+    });
+  };
 
-  return createEndpoint('') as any;
+  return createEndpoint([]);
 }
 export { restful };
 
@@ -88,6 +135,12 @@ export { restful };
  * - Returns JSON-parsed response bodies, not the intermittent `Response` object, but the `Response` object is available on the `RestError`
  */
 restful.default = <T extends RestApiTemplate>(options: DefaultRequesterOptions) => restful<T>(createDefaultRequester(options));
+
+restful.BodyMorphSymbol = BodyMorphSymbol;
+restful.QueryMorphSymbol = QueryMorphSymbol;
+restful.HeaderMorphSymbol = HeaderMorphSymbol;
+restful.ResultMorphSymbol = ResultMorphSymbol;
+restful.isResource = (value: EndpointPathPart): value is RestResourcePathPart => value instanceof RestResourcePathPart;
 
 export interface DefaultRequesterOptions {
   baseUrl: string;
@@ -121,7 +174,7 @@ export function createDefaultRequester({
         .filter(([_, value]) => value !== null && value !== undefined)
         .map(([key, value]) => [key, value.toString()])
     );
-    const url = `${baseUrl.replace(/\/$/, '')}/${endpoint.replace(/^\//, '')}${params.size ? `?${params}` : ''}`;
+    const url = `${baseUrl.replace(/\/$/, '')}/${endpoint.join('/').replace(/^\//, '')}${params.size ? `?${params}` : ''}`;
     const response = await fetch(url, {
       method,
       headers: {
@@ -142,5 +195,12 @@ export class RestError extends Error {
   constructor(public readonly response: Response, public readonly body: string) {
     super(`${response.url} ${response.status} ${response.statusText}: ${body}`);
     this.name = 'RestError';
+  }
+}
+
+export class RestResourcePathPart {
+  constructor(public readonly value: string) {}
+  toString() {
+    return this.value;
   }
 }

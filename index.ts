@@ -12,15 +12,15 @@ type Requester = (options: RequestOptions) => Promise<unknown>;
 
 export type Query = Record<string, string | number | undefined | null>;
 
-export interface RequestOptions<Q extends Query = Query> {
+export interface RequestOptions<Q = Query> {
   method: Method;
   endpoint: Endpoint;
   body?: unknown;
-  query?: Q;
+  query?: Q & Query;
   headers?: Record<string, string>;
 }
 
-export type RemainingRequestOptions<Q extends Query = Query> = Omit<RequestOptions<Q>, 'method' | 'endpoint' | 'body'>;
+export type RemainingRequestOptions<Q = Query> = Omit<RequestOptions<Q>, 'method' | 'endpoint' | 'body'>;
 
 export type RestResource<T> = {
   [id: string | number]: T;
@@ -62,12 +62,12 @@ export interface RestApiTemplate {
 }
 
 export type RestApiMethodTemplate =
-  | RestApiMethod<'GET', undefined, Query, any>
-  | RestApiMethod<'DELETE', undefined, Query, any>
-  | RestApiMethod<'POST', any, Query, any>
-  | RestApiMethod<'PUT', any, Query, any>
-  | RestApiMethod<'PATCH', any, Query, any>;
-export type RestApiMethod<M extends Method, B, Q extends Query, R> =
+  | RestApiMethod<'GET', undefined, any, any>
+  | RestApiMethod<'DELETE', undefined, any, any>
+  | RestApiMethod<'POST', any, any, any>
+  | RestApiMethod<'PUT', any, any, any>
+  | RestApiMethod<'PATCH', any, any, any>;
+export type RestApiMethod<M extends Method, B, Q, R> =
   M extends 'GET' | 'DELETE' ? (method: M, options?: RemainingRequestOptions<Q>) => Promise<R> :
   (method: M, body: B, options?: RemainingRequestOptions<Q>) => Promise<R>;
 

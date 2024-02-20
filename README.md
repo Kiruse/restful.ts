@@ -5,7 +5,7 @@
 Restful wraps around an arbitrary `Requester`, but to get started quickly with JSON requests & responses you can use `restful.default` like below:
 
 ```typescript
-import { restful, RestApiMethod, RestError, RestResource } from '@kiruse/restful';
+import { restful, RestError, RestMethods } from '@kiruse/restful';
 
 interface User {
   // some user data
@@ -18,30 +18,41 @@ type MyApi = {
   // Endpoints are defined as methods.
   greet(method: 'GET'): Promise<string>;
 
-  // You can also define them with the `RestApiMethod` like below.
-  // It takes 4 parameters: method, body, query, result.
-  motd: RestApiMethod<'GET', never, never, string>;
+  // You can also define them with the `RestMethods` helper below. It takes an object defining
+  // the 5 supported verbs (get, post, put, patch, delete) and maps them into the appropriate
+  // function signature(s).
+  // This is my preferred style as it takes care of additional things such as request options
+  // and wrapping the result in a Promise.
+  motd: RestMethods<{
+    get(): string;
+  }>;
 
   // Paths are objects
   v2: {
-    greet(method: 'GET'): Promise<{ message: string }>;
+    greet: RestMethods<{
+      get(): { message: string };
+    }>;
   };
 
   // Paths can also be endpoints themselves by combining a method with an object like below.
-  foo:
-    & RestApiMethod<'GET', never, never, string>
-    & {
-        bar(method: 'GET'): Promise<string>;
-      };
+  foo: RestMethods<{
+    get(): string;
+  }> & {
+    bar: RestMethods<{
+      get(): string;
+    }>;
+  };
 
   // Resources of the pattern `/user/:id/<nested>`
   // the pattern below makes `user` itself callable with additional nested routes
-  user:
-    & RestApiMethod<'POST', Omit<User, 'uid'>, never, User>
-    & RestResource<
-      & RestApiMethod<'DELETE', never, never, void>
-      & RestApiMethod<'PATCH', Partial<User>, never, void>
-    >;
+  user: RestMethods<{
+    post(body: Omit<User, 'uid'>): User;
+  }> & {
+    [uid: string]: RestMethods<{
+      delete(): boolean;
+      patch(body: Partial<User>): User;
+    }>;
+  };
 }
 
 const rest = restful.default<MyApi>({
@@ -75,7 +86,7 @@ Endpoints can be morphed. For this purpose, `restful` exposes 4 symbols which ca
 - `restful.HeaderMorphSymbol`: Morph the request headers object before they are sent to the server.
 - `restful.ResultMorphSymbol`: Morph the response result payload after received from the server and JSON-parsed. Expected to return the user-defined result type.
 
-All morphing methods are strictly typed where possible based on your API definition. The result morpher receives the body as `unknown` in order to require deliberacy in your typing.
+All morphing methods are strictly typed where possible based on your API definition. The result morpher receives the response result as `unknown` in order to require deliberacy in your typing.
 
 **Example:**
 ```typescript

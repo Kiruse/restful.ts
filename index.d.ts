@@ -43,6 +43,44 @@ export interface RestApiTemplate {
 }
 export type RestApiMethodTemplate = RestApiMethod<'GET', undefined, any, any> | RestApiMethod<'DELETE', undefined, any, any> | RestApiMethod<'POST', any, any, any> | RestApiMethod<'PUT', any, any, any> | RestApiMethod<'PATCH', any, any, any>;
 export type RestApiMethod<M extends Method, B, Q, R> = M extends 'GET' | 'DELETE' ? (method: M, options?: RemainingRequestOptions<Q>) => Promise<R> : (method: M, body: B, options?: RemainingRequestOptions<Q>) => Promise<R>;
+type RestMethodsTemplate = {
+    get?(options?: any): any;
+    delete?(options?: any): any;
+    post?(body: any, options?: any): any;
+    put?(body: any, options?: any): any;
+    patch?(body: any, options?: any): any;
+};
+/** This is a utility type to help create more legible `RestApiMethod`s.
+ *
+ * Example usage:
+ * ```typescript
+ * import { RestMethods, RestResource } from '@kiruse/restful';
+ *
+ * type MyApi = {
+ *   users: RestMethods<{
+ *     get(): User[];
+ *   }> & {
+ *     [userId: string | number]: RestMethods<{
+ *       get(query: { name: string }): User;
+ *       post(body: { name: string }): User;
+ *       delete(query: { id: string }): boolean;
+ *     }>
+ *   >;
+ * };
+ *
+ * // creates API:
+ * let api: MyApi;
+ * api.users('GET'); // Promise<User[]>
+ * api.users['123']('GET', { query: { name: 'John Doe' } }); // Promise<User>
+ * api.users['123']('POST', { name: 'John Doe' }); // Promise<User>
+ * api.users['123']('DELETE', { query: { id: '123' } }); // Promise<boolean>
+ * ```
+ */
+export type RestMethods<T extends RestMethodsTemplate> = (T['get'] extends RestMethods.Bodyless<infer O, infer R> ? RestApiMethod<'GET', never, O, R> : {}) & (T['delete'] extends RestMethods.Bodyless<infer O, infer R> ? RestApiMethod<'DELETE', never, O, R> : {}) & (T['post'] extends RestMethods.WithBody<infer B, infer O, infer R> ? RestApiMethod<'POST', B, O, R> : {}) & (T['put'] extends RestMethods.WithBody<infer B, infer O, infer R> ? RestApiMethod<'PUT', B, O, R> : {}) & (T['patch'] extends RestMethods.WithBody<infer B, infer O, infer R> ? RestApiMethod<'PATCH', B, O, R> : {});
+export declare namespace RestMethods {
+    type Bodyless<Q, R> = (query?: Q) => R;
+    type WithBody<B, Q, R> = (body: B, query?: Q) => R;
+}
 /** Extracts the applicable method of this endpoint from a valid method signature. */
 export type RestApiMethodMethod<Fn extends RestApiMethodTemplate> = Fn extends RestApiMethod<infer M, any, any, any> ? M : never;
 /** Extracts the request body type of this endpoint from a valid method signature. */

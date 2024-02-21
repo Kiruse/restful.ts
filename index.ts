@@ -16,7 +16,7 @@ export interface RequestOptions<Q = Query> {
   method: Method;
   endpoint: Endpoint;
   body?: unknown;
-  query?: Q & Query;
+  query?: URLSearchParams | (Q & Query);
   headers?: Record<string, string>;
 }
 
@@ -228,8 +228,9 @@ export function createDefaultRequester({
     query = {},
     headers = {},
   }: RequestOptions): Promise<any> {
+    const entries = query instanceof URLSearchParams ? Array.from(query.entries()) : Object.entries(query);
     const params = new URLSearchParams(
-      Object.entries(query)
+      entries
         .filter(([_, value]) => value !== null && value !== undefined)
         .map(([key, value]) => [key, value.toString()])
     );

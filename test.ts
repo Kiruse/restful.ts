@@ -1,19 +1,20 @@
 import { afterAll, expect, test } from 'bun:test';
-import restful, { RestApiMethod, RestResource } from './index';
+import restful, { RestApiMethod, RestMethods, RestResource } from './index';
 import { Foo, mockServer } from './mock';
 
 type MockApi = {
   'hello-world'(method: 'GET'): Promise<string>;
   echo<T>(method: 'POST', body: T): Promise<T>;
 
-  foo: RestApiMethod<'POST', any, never, Foo>
-  & RestResource<{
+  foo: RestMethods<{
+    post(): Foo;
+  }> & RestResource<{
       (method: 'GET'): Promise<Foo>;
       (method: 'PUT', body: Omit<Foo, 'id'>): Promise<Foo>;
-      name: RestApiMethod<'PUT', { value: string }, never, Foo>;
+      name: RestApiMethod<'PUT', { value: string }, undefined, Foo>;
     }>;
 
-  morphing: RestApiMethod<'GET', never, never, string>;
+  morphing: RestApiMethod<'GET', never, undefined, string>;
 };
 
 const mockApi = restful.default<MockApi>({

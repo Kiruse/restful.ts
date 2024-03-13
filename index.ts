@@ -17,14 +17,16 @@ export interface RequestOptions<Q = Query> {
   method: Method;
   endpoint: Endpoint;
   body?: unknown;
-  query?: URLSearchParams | (Q & Query);
+  query?: URLSearchParams | Q;
   headers?: Record<string, string>;
 }
 
-export type RemainingRequestOptions<Q = Query> = Omit<RequestOptions<Q>, 'method' | 'endpoint' | 'body' | 'query'>
-  & Q extends undefined | never
-  ? Pick<RequestOptions<Q>, 'query'>
-  : Required<Pick<RequestOptions<Q>, 'query'>>;
+export type RemainingRequestOptions<Q = Query> =
+  & Omit<RequestOptions<Q>, 'method' | 'endpoint' | 'body' | 'query'>
+  & (undefined extends Q
+      ? { query?: URLSearchParams | Q }
+      : { query:  URLSearchParams | Q }
+    );
 
 export type RestResource<T> = {
   [id: string | number]: T;
@@ -36,11 +38,11 @@ export type RestApi<T extends RestApiTemplate | RestApiMethodTemplate> =
       ? {
           [K in keyof T]: RestApi<T[K]>;
         }
-      : { '$INVALID_REST_PATH$': never }
+      : {}
     )
   & (
       T extends RestApiMethodTemplate
-      ? T & {
+      ? (T & {
           /** An optional morpher which takes the request body and changes it, e.g. changing its shape
            * when the desired library-exposed shape is different from the actual API shape.
            */
@@ -57,8 +59,8 @@ export type RestApi<T extends RestApiTemplate | RestApiMethodTemplate> =
            * the desired result. Should throw `RestError` if it fails to parse the result.
            */
           [ResultMorphSymbol]?(endpoint: Endpoint, result: unknown): RestApiMethodResult<T>;
-        }
-      : { '$INVALID_REST_METHOD$': never }
+        })
+      : {}
     )
 
 export interface RestApiTemplate {
@@ -70,11 +72,14 @@ export type RestApiMethodTemplate = {
 }[Method];
 export type RestApiMethod<M extends Method, B, Q, R> =
   M extends 'GET' | 'DELETE'
-  ? (Q extends undefined
-    ? (method: M, options?: RemainingRequestOptions<Q>) => Promise<R>
-    : (method: M, options: RemainingRequestOptions<Q>) => Promise<R>
+  ? (undefined extends Q
+    ? ((method: M, options?: RemainingRequestOptions<Q>) => Promise<R>)
+    : ((method: M, options: RemainingRequestOptions<Q>) => Promise<R>)
     )
-  : (method: M, body: B, options?: RemainingRequestOptions<Q>) => Promise<R>;
+  : (undefined extends Q
+    ? ((method: M, body: B, options?: RemainingRequestOptions<Q>) => Promise<R>)
+    : ((method: M, body: B, options: RemainingRequestOptions<Q>) => Promise<R>)
+    );
 
 type RestMethodsTemplate = {
   get?(options?: any): any;

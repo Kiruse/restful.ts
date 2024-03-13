@@ -78,7 +78,8 @@ restful.ResultMorphSymbol = exports.ResultMorphSymbol;
 restful.isResource = (value) => value instanceof RestResourcePathPart;
 function createDefaultRequester({ baseUrl, headers: baseHeaders = {}, marshal = (value) => value, unmarshal = (value) => value, }) {
     return async function ({ method, endpoint, body, query = {}, headers = {}, }) {
-        const params = new URLSearchParams(Object.entries(query)
+        const entries = query instanceof URLSearchParams ? Array.from(query.entries()) : Object.entries(query);
+        const params = new URLSearchParams(entries
             .filter(([_, value]) => value !== null && value !== undefined)
             .map(([key, value]) => [key, value.toString()]));
         const url = `${baseUrl.replace(/\/$/, '')}/${endpoint.join('/').replace(/^\//, '')}${params.size ? `?${params}` : ''}`;

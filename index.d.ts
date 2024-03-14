@@ -14,6 +14,7 @@ export interface RequestOptions<Q = Query> {
     body?: unknown;
     query?: URLSearchParams | Q;
     headers?: Record<string, string>;
+    signal?: AbortSignal;
 }
 export type RemainingRequestOptions<Q = Query> = Omit<RequestOptions<Q>, 'method' | 'endpoint' | 'body' | 'query'> & (undefined extends Q ? {
     query?: URLSearchParams | Q;

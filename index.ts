@@ -218,7 +218,7 @@ export function createDefaultRequester({
     query = {},
     headers = {},
   }: RequestOptions): Promise<any> {
-    const entries = query instanceof URLSearchParams ? Array.from(query.entries()) : Object.entries(query);
+    const entries = query instanceof URLSearchParams ? Array.from(query.entries()) : Object.entries(marshal(query));
     const params = new URLSearchParams(
       entries
         .filter(([_, value]) => value !== null && value !== undefined)

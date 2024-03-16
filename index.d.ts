@@ -34,7 +34,7 @@ export type RestApi<T extends RestApiTemplate | RestApiMethodTemplate> = (T exte
     /** An optional morpher which takes the request query and changes it, e.g. adds more
      * parameters depending on the endpoint.
      */
-    [QueryMorphSymbol]?(endpoint: Endpoint, query: RestApiMethodQuery<T>): Query;
+    [QueryMorphSymbol]?(endpoint: Endpoint, query: RestApiMethodQuery<T> | undefined): Query;
     /** An optional morpher which takes the request headers and changes them, e.g. adds more
      * headers depending on the endpoint.
      */

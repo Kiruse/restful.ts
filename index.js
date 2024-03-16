@@ -17,12 +17,8 @@ function restful(request) {
             else {
                 [body, opts] = args;
             }
-            if (opts) {
-                if (opts.query)
-                    query = target[exports.QueryMorphSymbol] ? target[exports.QueryMorphSymbol](endpoint, opts.query) : opts.query;
-                if (opts.headers)
-                    headers = target[exports.HeaderMorphSymbol] ? target[exports.HeaderMorphSymbol](endpoint, opts.headers) : opts.headers;
-            }
+            query = target[exports.QueryMorphSymbol] ? target[exports.QueryMorphSymbol](endpoint, opts?.query) : opts?.query;
+            headers = target[exports.HeaderMorphSymbol] ? target[exports.HeaderMorphSymbol](endpoint, opts?.headers) : opts?.headers;
             const result = await request({
                 method,
                 endpoint,
@@ -78,7 +74,7 @@ restful.ResultMorphSymbol = exports.ResultMorphSymbol;
 restful.isResource = (value) => value instanceof RestResourcePathPart;
 function createDefaultRequester({ baseUrl, headers: baseHeaders = {}, marshal = (value) => value, unmarshal = (value) => value, }) {
     return async function ({ method, endpoint, body, query = {}, headers = {}, }) {
-        const entries = query instanceof URLSearchParams ? Array.from(query.entries()) : Object.entries(query);
+        const entries = query instanceof URLSearchParams ? Array.from(query.entries()) : Object.entries(marshal(query));
         const params = new URLSearchParams(entries
             .filter(([_, value]) => value !== null && value !== undefined)
             .map(([key, value]) => [key, value.toString()]));

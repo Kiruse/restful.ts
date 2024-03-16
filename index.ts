@@ -51,7 +51,7 @@ export type RestApi<T extends RestApiTemplate | RestApiMethodTemplate> =
           /** An optional morpher which takes the request query and changes it, e.g. adds more
            * parameters depending on the endpoint.
            */
-          [QueryMorphSymbol]?(endpoint: Endpoint, query: RestApiMethodQuery<T>): Query;
+          [QueryMorphSymbol]?(endpoint: Endpoint, query: RestApiMethodQuery<T> | undefined): Query;
           /** An optional morpher which takes the request headers and changes them, e.g. adds more
            * headers depending on the endpoint.
            */
@@ -128,12 +128,8 @@ export default function restful<T extends RestApiTemplate>(request: Requester): 
         [body, opts] = args;
       }
 
-      if (opts) {
-        if (opts.query)
-          query = target[QueryMorphSymbol] ? target[QueryMorphSymbol](endpoint, opts.query) : opts.query;
-        if (opts.headers)
-          headers = target[HeaderMorphSymbol] ? target[HeaderMorphSymbol](endpoint, opts.headers) : opts.headers;
-      }
+      query = target[QueryMorphSymbol] ? target[QueryMorphSymbol](endpoint, opts?.query) : opts?.query;
+      headers = target[HeaderMorphSymbol] ? target[HeaderMorphSymbol](endpoint, opts?.headers) : opts?.headers;
 
       const result = await request({
         method,

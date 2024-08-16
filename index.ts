@@ -120,7 +120,7 @@ export type RestApiMethodResult<Fn extends RestApiMethodTemplate> = Fn extends R
 /** `restful` creates a simple interface to your RESTful web API. */
 export default function restful<T extends RestApiTemplate>(request: Requester): RestApi<T> {
   function createEndpoint(endpoint: Endpoint): any {
-    const target = async (method: Method, ...args: any[]) => {
+    const target: any = async (method: Method, ...args: any[]) => {
       let body: any, query: any, headers: any, opts: any;
       if (method === 'GET' || method === 'DELETE') {
         [opts] = args;
@@ -218,7 +218,7 @@ export function createDefaultRequester({
     const params = new URLSearchParams(
       entries
         .filter(([_, value]) => value !== null && value !== undefined)
-        .map(([key, value]) => [key, value.toString()] as [string, string])
+        .map(([key, value]: [string, any]) => [key, value.toString()] as [string, string])
     );
     baseUrl = typeof baseUrl === 'function' ? await baseUrl() : baseUrl;
     const url = `${baseUrl.replace(/\/$/, '')}/${endpoint.join('/').replace(/^\//, '')}${params.size ? `?${params}` : ''}`;

@@ -90,7 +90,7 @@ declare namespace restful {
 export default restful;
 export { restful };
 export interface DefaultRequesterOptions {
-    baseUrl: string;
+    baseUrl: string | (() => string | Promise<string>);
     /** Default headers to set for every request. */
     headers?: Record<string, string>;
     /** Marshalling algorithm, called like `JSON.stringify(marshal(body))` if body is truthy.

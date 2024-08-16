@@ -78,6 +78,7 @@ function createDefaultRequester({ baseUrl, headers: baseHeaders = {}, marshal = 
         const params = new URLSearchParams(entries
             .filter(([_, value]) => value !== null && value !== undefined)
             .map(([key, value]) => [key, value.toString()]));
+        baseUrl = typeof baseUrl === 'function' ? await baseUrl() : baseUrl;
         const url = `${baseUrl.replace(/\/$/, '')}/${endpoint.join('/').replace(/^\//, '')}${params.size ? `?${params}` : ''}`;
         const response = await fetch(url, {
             method,

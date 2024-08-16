@@ -188,7 +188,7 @@ restful.ResultMorphSymbol = ResultMorphSymbol;
 restful.isResource = (value: EndpointPathPart): value is RestResourcePathPart => value instanceof RestResourcePathPart;
 
 export interface DefaultRequesterOptions {
-  baseUrl: string;
+  baseUrl: string | (() => string | Promise<string>);
   /** Default headers to set for every request. */
   headers?: Record<string, string>;
   /** Marshalling algorithm, called like `JSON.stringify(marshal(body))` if body is truthy.
@@ -218,8 +218,9 @@ export function createDefaultRequester({
     const params = new URLSearchParams(
       entries
         .filter(([_, value]) => value !== null && value !== undefined)
-        .map(([key, value]) => [key, value.toString()])
+        .map(([key, value]) => [key, value.toString()] as [string, string])
     );
+    baseUrl = typeof baseUrl === 'function' ? await baseUrl() : baseUrl;
     const url = `${baseUrl.replace(/\/$/, '')}/${endpoint.join('/').replace(/^\//, '')}${params.size ? `?${params}` : ''}`;
     const response = await fetch(url, {
       method,

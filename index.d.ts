@@ -102,7 +102,7 @@ export interface DefaultRequesterOptions {
      */
     unmarshal?(value: any): any;
 }
-export declare function createDefaultRequester({ baseUrl, headers: baseHeaders, marshal, unmarshal, }: DefaultRequesterOptions): ({ method, endpoint, body, query, headers, }: RequestOptions) => Promise<any>;
+export declare function createDefaultRequester({ baseUrl: _baseUrl, headers: baseHeaders, marshal, unmarshal, }: DefaultRequesterOptions): ({ method, endpoint, body, query, headers, }: RequestOptions) => Promise<any>;
 export declare class RestError extends Error {
     readonly response: Response;
     readonly body: string;

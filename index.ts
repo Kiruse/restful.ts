@@ -202,7 +202,7 @@ export interface DefaultRequesterOptions {
 }
 
 export function createDefaultRequester({
-  baseUrl,
+  baseUrl: _baseUrl,
   headers: baseHeaders = {},
   marshal = (value: any) => value,
   unmarshal = (value: any) => value,
@@ -220,7 +220,7 @@ export function createDefaultRequester({
         .filter(([_, value]) => value !== null && value !== undefined)
         .map(([key, value]: [string, any]) => [key, value.toString()] as [string, string])
     );
-    baseUrl = typeof baseUrl === 'function' ? await baseUrl() : baseUrl;
+    const baseUrl = typeof _baseUrl === 'function' ? await _baseUrl() : _baseUrl;
     const url = `${baseUrl.replace(/\/$/, '')}/${endpoint.join('/').replace(/^\//, '')}${params.size ? `?${params}` : ''}`;
     const response = await fetch(url, {
       method,

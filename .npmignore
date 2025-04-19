@@ -1,2 +1,5 @@
 node_modules/
 bun.lockb
+index.ts
+mock.ts
+test.ts

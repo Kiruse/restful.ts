@@ -1,8 +1,13 @@
 {
   "name": "@kiruse/restful",
-  "version": "0.2.3-fix.3",
+  "version": "0.2.3-fix.4",
   "description": "Simple REST-ful abstraction with a sprinkle of TypeScript magic",
   "main": "index.js",
+  "module": "index.js",
+  "exports": {
+    ".": "./index.js"
+  },
+  "types": "./index.d.ts",
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "test": "bun test ./test.ts"

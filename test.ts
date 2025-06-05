@@ -14,7 +14,13 @@ type MockApi = {
       name: RestApiMethod<'PUT', { value: string }, undefined, Foo>;
     }>;
 
-  morphing: RestApiMethod<'GET', never, undefined, string>;
+  bar: RestMethods<{
+    get(options: { a: number }): Promise<Foo>;
+  }>;
+
+  morphing: RestMethods<{
+    get(query: { a: bigint }): Promise<string>;
+  }>;
 };
 
 const mockApi = restful.default<MockApi>({
@@ -23,6 +29,10 @@ const mockApi = restful.default<MockApi>({
 
 mockApi.morphing[restful.ResultMorphSymbol] = (endpoint, result: any) => {
   return result.msg;
+};
+mockApi.morphing[restful.QueryMorphSymbol] = (endpoint, query) => {
+  query.set('a', query.get('a')!.toString());
+  return query;
 };
 
 test('hello-world', async () => {
@@ -40,8 +50,12 @@ test('nesting', async () => {
   expect(await mockApi.foo[1].name('PUT', { value: 'Bar' })).toEqual({ id: 1, name: 'Bar' });
 });
 
+test('query', async () => {
+  expect(await mockApi.bar('GET', { query: { a: 1 } })).toEqual({ id: 1, a: 'Foo 1' });
+});
+
 test('morphing', async () => {
-  expect(await mockApi.morphing('GET')).toBe('Hello, World!');
+  expect(await mockApi.morphing('GET', { query: { a: 1n } })).toBe('Hello, 1!');
 });
 
 test('instance stability', () => {

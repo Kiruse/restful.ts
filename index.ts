@@ -13,17 +13,17 @@ type Fn<Args extends any[] = any[], R = any> = (...args: Args) => R;
 
 export type Query = Record<string, string | number | undefined | null>;
 
-export interface RequestOptions<Q = Query> {
+export interface RequestOptions {
   method: Method;
   endpoint: Endpoint;
   body?: unknown;
-  query?: URLSearchParams | Q;
+  query?: URLSearchParams;
   headers?: Record<string, string>;
   signal?: AbortSignal;
 }
 
 export type RemainingRequestOptions<Q = Query> =
-  & Omit<RequestOptions<Q>, 'method' | 'endpoint' | 'body' | 'query'>
+  & Omit<RequestOptions, 'method' | 'endpoint' | 'body' | 'query'>
   & (undefined extends Q
       ? { query?: URLSearchParams | Q }
       : { query:  URLSearchParams | Q }
@@ -51,7 +51,7 @@ export type RestApi<T extends RestApiTemplate | RestApiMethodTemplate> =
           /** An optional morpher which takes the request query and changes it, e.g. adds more
            * parameters depending on the endpoint.
            */
-          [QueryMorphSymbol]?(endpoint: Endpoint, query: RestApiMethodQuery<T> | undefined): Query;
+          [QueryMorphSymbol]?(endpoint: Endpoint, query: URLSearchParams): URLSearchParams;
           /** An optional morpher which takes the request headers and changes them, e.g. adds more
            * headers depending on the endpoint.
            */
@@ -121,14 +121,26 @@ export type RestApiMethodResult<Fn extends RestApiMethodTemplate> = Fn extends R
 export default function restful<T extends RestApiTemplate>(request: Requester): RestApi<T> {
   function createEndpoint(endpoint: Endpoint): any {
     const target: any = async (method: Method, ...args: any[]) => {
-      let body: any, query: any, headers: any, opts: any;
+      let body: any, headers: any, opts: RemainingRequestOptions | undefined;
       if (method === 'GET' || method === 'DELETE') {
         [opts] = args;
       } else {
         [body, opts] = args;
       }
 
-      query = target[QueryMorphSymbol] ? target[QueryMorphSymbol](endpoint, opts?.query) : opts?.query;
+      let query = new URLSearchParams();
+      if (opts?.query) {
+        if (opts.query instanceof URLSearchParams) {
+          query = opts.query;
+        } else {
+          Object.entries(opts.query)
+            .filter(([_, value]) => value !== null && value !== undefined)
+            .map(([key, value]: [string, any]) => [key, value.toString()] as [string, string])
+            .forEach(([key, value]) => query.append(key, value));
+        }
+      }
+
+      query = target[QueryMorphSymbol] ? target[QueryMorphSymbol](endpoint, query) : query;
       headers = target[HeaderMorphSymbol] ? target[HeaderMorphSymbol](endpoint, opts?.headers) : opts?.headers;
 
       const result = await request({
@@ -211,7 +223,7 @@ export function createDefaultRequester({
     method,
     endpoint,
     body,
-    query = {},
+    query = new URLSearchParams(),
     headers = {},
   }: RequestOptions): Promise<any> {
     const entries = query instanceof URLSearchParams ? Array.from(query.entries()) : Object.entries(marshal(query));

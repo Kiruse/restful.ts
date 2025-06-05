@@ -10,14 +10,26 @@ exports.ResultMorphSymbol = Symbol('Restful.ResultMorph');
 function restful(request) {
     function createEndpoint(endpoint) {
         const target = async (method, ...args) => {
-            let body, query, headers, opts;
+            let body, headers, opts;
             if (method === 'GET' || method === 'DELETE') {
                 [opts] = args;
             }
             else {
                 [body, opts] = args;
             }
-            query = target[exports.QueryMorphSymbol] ? target[exports.QueryMorphSymbol](endpoint, opts?.query) : opts?.query;
+            let query = new URLSearchParams();
+            if (opts?.query) {
+                if (opts.query instanceof URLSearchParams) {
+                    query = opts.query;
+                }
+                else {
+                    Object.entries(opts.query)
+                        .filter(([_, value]) => value !== null && value !== undefined)
+                        .map(([key, value]) => [key, value.toString()])
+                        .forEach(([key, value]) => query.append(key, value));
+                }
+            }
+            query = target[exports.QueryMorphSymbol] ? target[exports.QueryMorphSymbol](endpoint, query) : query;
             headers = target[exports.HeaderMorphSymbol] ? target[exports.HeaderMorphSymbol](endpoint, opts?.headers) : opts?.headers;
             const result = await request({
                 method,
@@ -73,7 +85,7 @@ restful.HeaderMorphSymbol = exports.HeaderMorphSymbol;
 restful.ResultMorphSymbol = exports.ResultMorphSymbol;
 restful.isResource = (value) => value instanceof RestResourcePathPart;
 function createDefaultRequester({ baseUrl: _baseUrl, headers: baseHeaders = {}, marshal = (value) => value, unmarshal = (value) => value, }) {
-    return async function ({ method, endpoint, body, query = {}, headers = {}, }) {
+    return async function ({ method, endpoint, body, query = new URLSearchParams(), headers = {}, }) {
         const entries = query instanceof URLSearchParams ? Array.from(query.entries()) : Object.entries(marshal(query));
         const params = new URLSearchParams(entries
             .filter(([_, value]) => value !== null && value !== undefined)

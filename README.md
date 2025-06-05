@@ -107,6 +107,8 @@ api.foo[restful.ResultMorphSymbol] = (endpoint, result: { msg: string }) => {
 console.log(await api.foo('GET')); // eg: bar
 ```
 
+The *query* morpher receives parsed `URLSearchParams` and is expected to return `URLSearchParams`. Previously, it received `URLSearchParams | Query | undefined`, which made developing new requesters or morphers needlessly tedious, and was expected to return a `Query`, which potentially wouldn't even support all use-cases.
+
 ## `restful.default` Configuration
 `restful.default` supports a few configuration options:
 

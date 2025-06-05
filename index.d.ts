@@ -8,15 +8,15 @@ type Method = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 type Requester = (options: RequestOptions) => Promise<unknown>;
 type Fn<Args extends any[] = any[], R = any> = (...args: Args) => R;
 export type Query = Record<string, string | number | undefined | null>;
-export interface RequestOptions<Q = Query> {
+export interface RequestOptions {
     method: Method;
     endpoint: Endpoint;
     body?: unknown;
-    query?: URLSearchParams | Q;
+    query?: URLSearchParams;
     headers?: Record<string, string>;
     signal?: AbortSignal;
 }
-export type RemainingRequestOptions<Q = Query> = Omit<RequestOptions<Q>, 'method' | 'endpoint' | 'body' | 'query'> & (undefined extends Q ? {
+export type RemainingRequestOptions<Q = Query> = Omit<RequestOptions, 'method' | 'endpoint' | 'body' | 'query'> & (undefined extends Q ? {
     query?: URLSearchParams | Q;
 } : {
     query: URLSearchParams | Q;
@@ -34,7 +34,7 @@ export type RestApi<T extends RestApiTemplate | RestApiMethodTemplate> = (T exte
     /** An optional morpher which takes the request query and changes it, e.g. adds more
      * parameters depending on the endpoint.
      */
-    [QueryMorphSymbol]?(endpoint: Endpoint, query: RestApiMethodQuery<T> | undefined): Query;
+    [QueryMorphSymbol]?(endpoint: Endpoint, query: URLSearchParams): URLSearchParams;
     /** An optional morpher which takes the request headers and changes them, e.g. adds more
      * headers depending on the endpoint.
      */

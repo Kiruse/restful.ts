@@ -38,8 +38,12 @@ app.put('/api/foo/:id/name', (req, res) => {
   res.json({ id, name: req.body.value });
 });
 
+app.get('/api/bar', (req, res) => {
+  res.json({ id: 1, a: `Foo ${req.query.a}` });
+});
+
 app.get('/api/morphing', (req, res) => {
-  res.json({ msg: 'Hello, World!' });
+  res.json({ msg: `Hello, ${req.query.a}!` });
 });
 
 export const mockServer = app.listen(3034);

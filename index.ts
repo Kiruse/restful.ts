@@ -226,14 +226,8 @@ export function createDefaultRequester({
     query = new URLSearchParams(),
     headers = {},
   }: RequestOptions): Promise<any> {
-    const entries = query instanceof URLSearchParams ? Array.from(query.entries()) : Object.entries(marshal(query));
-    const params = new URLSearchParams(
-      entries
-        .filter(([_, value]) => value !== null && value !== undefined)
-        .map(([key, value]: [string, any]) => [key, value.toString()] as [string, string])
-    );
     const baseUrl = typeof _baseUrl === 'function' ? await _baseUrl() : _baseUrl;
-    const url = `${baseUrl.replace(/\/$/, '')}/${endpoint.join('/').replace(/^\//, '')}${params.size ? `?${params}` : ''}`;
+    const url = `${baseUrl.replace(/\/$/, '')}/${endpoint.join('/').replace(/^\//, '')}${query.size ? `?${query}` : ''}`;
     const response = await fetch(url, {
       method,
       headers: {

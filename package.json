@@ -1,6 +1,6 @@
 {
   "name": "@kiruse/restful",
-  "version": "0.2.6",
+  "version": "0.2.7",
   "description": "Simple REST-ful abstraction with a sprinkle of TypeScript magic",
   "main": "index.js",
   "module": "index.js",

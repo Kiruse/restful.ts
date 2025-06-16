@@ -211,6 +211,8 @@ export interface DefaultRequesterOptions {
    * Unmarshalling can be used to restore case. Defaults to identity.
    */
   unmarshal?(value: any): any;
+  /** Transform the query before it's sent. */
+  transformQuery?(query: URLSearchParams): URLSearchParams;
 }
 
 export function createDefaultRequester({
@@ -218,6 +220,7 @@ export function createDefaultRequester({
   headers: baseHeaders = {},
   marshal = (value: any) => value,
   unmarshal = (value: any) => value,
+  transformQuery = (query) => query,
 }: DefaultRequesterOptions) {
   return async function({
     method,
@@ -226,8 +229,10 @@ export function createDefaultRequester({
     query = new URLSearchParams(),
     headers = {},
   }: RequestOptions): Promise<any> {
+    query = transformQuery(query);
     const baseUrl = typeof _baseUrl === 'function' ? await _baseUrl() : _baseUrl;
-    const url = `${baseUrl.replace(/\/$/, '')}/${endpoint.join('/').replace(/^\//, '')}${query.size ? `?${query}` : ''}`;
+    // using `toString()` here because some runtimes apparently don't actually have `query.size`
+    const url = `${baseUrl.replace(/\/$/, '')}/${endpoint.join('/').replace(/^\//, '')}${query.toString() ? `?${query}` : ''}`;
     const response = await fetch(url, {
       method,
       headers: {

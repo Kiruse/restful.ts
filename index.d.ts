@@ -101,8 +101,10 @@ export interface DefaultRequesterOptions {
      * Unmarshalling can be used to restore case. Defaults to identity.
      */
     unmarshal?(value: any): any;
+    /** Transform the query before it's sent. */
+    transformQuery?(query: URLSearchParams): URLSearchParams;
 }
-export declare function createDefaultRequester({ baseUrl: _baseUrl, headers: baseHeaders, marshal, unmarshal, }: DefaultRequesterOptions): ({ method, endpoint, body, query, headers, }: RequestOptions) => Promise<any>;
+export declare function createDefaultRequester({ baseUrl: _baseUrl, headers: baseHeaders, marshal, unmarshal, transformQuery, }: DefaultRequesterOptions): ({ method, endpoint, body, query, headers, }: RequestOptions) => Promise<any>;
 export declare class RestError extends Error {
     readonly response: Response;
     readonly body: string;

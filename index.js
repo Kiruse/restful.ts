@@ -84,10 +84,12 @@ restful.QueryMorphSymbol = exports.QueryMorphSymbol;
 restful.HeaderMorphSymbol = exports.HeaderMorphSymbol;
 restful.ResultMorphSymbol = exports.ResultMorphSymbol;
 restful.isResource = (value) => value instanceof RestResourcePathPart;
-function createDefaultRequester({ baseUrl: _baseUrl, headers: baseHeaders = {}, marshal = (value) => value, unmarshal = (value) => value, }) {
+function createDefaultRequester({ baseUrl: _baseUrl, headers: baseHeaders = {}, marshal = (value) => value, unmarshal = (value) => value, transformQuery = (query) => query, }) {
     return async function ({ method, endpoint, body, query = new URLSearchParams(), headers = {}, }) {
+        query = transformQuery(query);
         const baseUrl = typeof _baseUrl === 'function' ? await _baseUrl() : _baseUrl;
-        const url = `${baseUrl.replace(/\/$/, '')}/${endpoint.join('/').replace(/^\//, '')}${query.size ? `?${query}` : ''}`;
+        // using `toString()` here because some runtimes apparently don't actually have `query.size`
+        const url = `${baseUrl.replace(/\/$/, '')}/${endpoint.join('/').replace(/^\//, '')}${query.toString() ? `?${query}` : ''}`;
         const response = await fetch(url, {
             method,
             headers: {
